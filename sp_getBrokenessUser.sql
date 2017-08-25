@@ -17,7 +17,7 @@ BEGIN
 		, brk_responsibleUSer VARCHAR(20)
 		, brk_createDate DATETIME
 		, brk_amount DECIMAL(18,4)
-		, brk_description VARCHAR(350)
+		, brk_description VARCHAR(500)
 		, brk_wstatus VARCHAR(30)
 	)
 
@@ -45,7 +45,10 @@ BEGIN
 			, chk.wlc_codeSVA
 			, chkbd.bknd_amountCharge
 			, chk.wlc_createUser
-			, chk.wlc_respStageUser
+			, CASE
+				WHEN chk.wlc_respStageUser = 'gvargas' THEN 'GCP'
+				ELSE chk.wlc_respStageUser
+			END AS responsibleUser
 			, gp.tbrokeness_name + ' - ' + p.tbrokeness_name + ' - ' + tbrk.tbrokeness_name AS reason
 			
 		FROM INVENTARIO.dbo.tp_checkListWarranty chk
@@ -63,7 +66,7 @@ BEGIN
 		a.*
 		, b.bknd_amountCharge AS amount
 		, b.wlc_createUser AS createUser
-		, b.wlc_respStageUser AS responsibleUser
+		, b.responsibleUser
 		, b.reason 
 		, inv.credito AS credit
 		, CASE 
@@ -91,7 +94,10 @@ BEGIN
 			, chkw.wlc_createDate AS brkDate
 			, tdbrk.bknd_amountCharge AS amount
 			, chkw.wlc_createUser AS createUser
-			, chkw.wlc_respStageUser AS responsibleUser
+			, CASE
+				WHEN chkw.wlc_respStageUser = 'gvargas' THEN 'GCP'
+				ELSE chkw.wlc_respStageUser
+			END AS responsibleUser
 			, inv.credito AS credit
 			, CASE 
 				WHEN cred.[STATUS] = 0 AND cred.SUBSISTEMA = 0 THEN 'VIGENTE'
@@ -116,6 +122,37 @@ BEGIN
 	FROM cte_brokenessInventarios a
 		INNER JOIN INVENTARIO.dbo.td_checkListWarranty chkwd ON (a.wlc_id = chkwd.wlc_id AND chkwd.wlcd_id IN (SELECT MAX(wlcd_id) FROM INVENTARIO.dbo.td_checkListWarranty WHERE wlc_id = a.wlc_id))
 
+
+	;WITH cte_brokenessAudit AS (
+		SELECT
+			'AUDITORIA' AS originSys
+			, ad.daud_code_sva AS codeSva
+			, ab.baud_amount_charge
+			, ab.baud_user_create
+			, ab.baud_user_responsive
+			, ab.baud_date_create
+			, ab.baud_comment
+			, ad.daud_credit
+			, CASE 
+				WHEN cred.[STATUS] = 0 AND cred.SUBSISTEMA = 0 THEN 'VIGENTE'
+				WHEN cred.[STATUS] = 0 AND cred.SUBSISTEMA = 1 THEN 'VENCIDO'
+				WHEN cred.[STATUS] = 1 AND cred.SUBSISTEMA = 0 THEN 'LIQ. CLIENTE'
+				WHEN cred.[STATUS] = 1 AND cred.SUBSISTEMA = 1 THEN 'VENDIDO'
+			END AS warrantyStatus
+			, REPLICATE('0', 5 - LEN(dep.id_departamento)) + CAST(dep.id_departamento AS varchar) + ' - ' + dep.descripcion AS branchOffice
+			, CASE 
+				WHEN cred.[STATUS] = 0 AND cred.SUBSISTEMA = 0 THEN 'Capital en riesgo'
+				ELSE 'Quebranto'
+			END AS brkType
+		FROM INVENTARIO.dbo.td_audit ad
+			INNER JOIN INVENTARIO.dbo.te_audit_bitacora ab ON (ad.daud_id = ab.daud_id)
+			INNER JOIN ISILOANSWEB.dbo.T_CRED cred ON (ad.daud_credit = cred.NUMERO)
+			INNER JOIN CATALOGOS.dbo.tc_departamento dep ON (cred.SUCURSAL = dep.id_departamento)
+	)
+
+	SELECT *
+	INTO #tpmAudit
+	FROM cte_brokenessAudit
 		
 	INSERT INTO #tmpbrk (
 		brk_originSys
@@ -157,14 +194,30 @@ BEGIN
 		, stk.reason
 		, stk.warrantyStatus
 	FROM #tmpInventarios stk
+	UNION
+	SELECT
+		a.originSys
+		, a.branchOffice
+		, a.daud_credit
+		, a.codeSva
+		, a.brkType
+		, a.baud_user_create
+		, a.baud_user_responsive
+		, a.baud_date_create
+		, a.baud_amount_charge
+		, a.baud_comment
+		, a.warrantyStatus
+	FROM #tpmAudit a
 
-	SELECT *
+	SELECT 
+		 ROW_NUMBER() OVER(ORDER BY brk_createDate ASC) AS [no]
+		 , *
 	FROM #tmpbrk
-	ORDER BY brk_createDate ASC
 
 	DROP TABLE #tmpbrokeness
 	DROP TABLE #tmpSive
 	DROP TABLE #tmpInventarios
+	DROP TABLE #tpmAudit
 	DROP TABLE #tmpbrk
 END
 
