@@ -7,6 +7,20 @@ BEGIN
 	DECLARE
 		@begenningDate VARCHAR(20) = '20170201'
 
+	CREATE TABLE #tmpbrk (
+		brk_originSys VARCHAR(30)
+		, brk_branchOffice VARCHAR(50)
+		, brk_credit VARCHAR(20)
+		, brk_codeSva VARCHAR(20)
+		, brk_type VARCHAR(30)
+		, brk_createUser VARCHAR(20)
+		, brk_responsibleUSer VARCHAR(20)
+		, brk_createDate DATETIME
+		, brk_amount DECIMAL(18,4)
+		, brk_description VARCHAR(350)
+		, brk_wstatus VARCHAR(30)
+	)
+
 	;WITH cte_brokenessSIVE AS (
 		SELECT 
 			ROW_NUMBER() OVER(ORDER BY brk.lbrokeness_date ASC) AS [norows]
@@ -59,6 +73,7 @@ BEGIN
 			WHEN cred.[STATUS] = 1 AND cred.SUBSISTEMA = 1 THEN 'VENDIDO'
 		END AS warrantyStatus
 	--select * 
+	INTO #tmpSive
 	FROM #tmpbrokeness a
 		INNER JOIN cte_brokenessInventaio b ON (a.norows = b.norows)
 		INNER JOIN INVENTARIO.dbo.tp_inventarios inv ON (a.codeSVA = inv.codigo_garantia)
@@ -77,7 +92,6 @@ BEGIN
 			, tdbrk.bknd_amountCharge AS amount
 			, chkw.wlc_createUser AS createUser
 			, chkw.wlc_respStageUser AS responsibleUser
-			--, chkwd.wlcd_wComments + ' - ' + chkwd.wlcd_dComments AS reason
 			, inv.credito AS credit
 			, CASE 
 				WHEN cred.[STATUS] = 0 AND cred.SUBSISTEMA = 0 THEN 'VIGENTE'
@@ -92,27 +106,66 @@ BEGIN
 			INNER JOIN ISILOANSWEB.dbo.T_CRED cred ON (inv.credito = cred.NUMERO)
 			INNER JOIN INVENTARIO.dbo.tp_brokenness tpbrk ON (chkw.wlc_id = tpbrk.wlc_id)
 			INNER JOIN INVENTARIO.dbo.td_brokenness tdbrk ON (tdbrk.bkn_id = tpbrk.bkn_id)
-			--INNER JOIN INVENTARIO.dbo.td_checkListWarranty chkwd ON (chkw.wlc_id = chkwd.wlc_id AND HAVING chkwd.wlcd_id = MAX(chkwd.wlcd_id))
 		WHERE chkw.sinv_id = 51	
 			AND chkw.wlc_codeSVA NOT IN (SELECT DISTINCT codeSVA FROM #tmpbrokeness)	
 	)
 	SELECT 
 		a.*
 		, chkwd.wlcd_desComments + ' - ' + chkwd.wlcd_wComments + ' - ' + chkwd.wlcd_dComments AS reason
+	INTO #tmpInventarios
 	FROM cte_brokenessInventarios a
 		INNER JOIN INVENTARIO.dbo.td_checkListWarranty chkwd ON (a.wlc_id = chkwd.wlc_id AND chkwd.wlcd_id IN (SELECT MAX(wlcd_id) FROM INVENTARIO.dbo.td_checkListWarranty WHERE wlc_id = a.wlc_id))
 
-	/*
-	SELECT 
-		DISTINCT codeSVA
-	FROM #tmpbrokeness*/
-	
+		
+	INSERT INTO #tmpbrk (
+		brk_originSys
+		, brk_branchOffice
+		, brk_credit
+		, brk_codeSva
+		, brk_type
+		, brk_createUser
+		, brk_responsibleUSer
+		, brk_createDate
+		, brk_amount
+		, brk_description
+		, brk_wstatus
+	)
 	SELECT
-		COUNT(DISTINCT codeSVA)
-	FROM #tmpbrokeness
+		brk.originSys
+		, brk.branchOffice
+		, brk.credit
+		, brk.codeSVA
+		, brk.brkType
+		, brk.createUser
+		, brk.responsibleUser
+		, brk.lbrokeness_date
+		, brk.amount
+		, brk.reason
+		, brk.warrantyStatus
+	FROM #tmpSive brk 
+	UNION
+	SELECT 
+		stk.originSys
+		, stk.branchOffice
+		, stk.credit
+		, stk.codeSVA
+		, stk.brkType
+		, stk.createUser
+		, stk.responsibleUser
+		, stk.brkDate
+		, stk.amount
+		, stk.reason
+		, stk.warrantyStatus
+	FROM #tmpInventarios stk
 
+	SELECT *
+	FROM #tmpbrk
+	ORDER BY brk_createDate ASC
 
 	DROP TABLE #tmpbrokeness
+	DROP TABLE #tmpSive
+	DROP TABLE #tmpInventarios
+	DROP TABLE #tmpbrk
 END
 
 -- EXEC SIGAQ.dbo.sp_getBrokenessUser
