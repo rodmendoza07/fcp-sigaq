@@ -1,33 +1,36 @@
 USE SIGAQ
 GO
 
-ALTER PROCEDURE [dbo].[sp_getBrokenessUser]
+ALTER PROCEDURE [dbo].[sp_getBrokenessUser] (
+	@startdate VARCHAR(30) = ''
+	, @enddate VARCHAR(330) = ''
+)
 AS
 BEGIN
 	DECLARE
 		@begenningDate VARCHAR(20) = '20170201'
 
 	CREATE TABLE #tmpbrk (
-		brk_originSys VARCHAR(30)
+		brk_originSys VARCHAR(100)
 		, brk_branchOffice VARCHAR(50)
 		, brk_credit VARCHAR(20)
 		, brk_codeSva VARCHAR(20)
-		, brk_type VARCHAR(30)
+		, brk_type VARCHAR(100)
 		, brk_createUser VARCHAR(20)
-		, brk_responsibleUSer VARCHAR(20)
+		, brk_responsibleUser VARCHAR(20)
 		, brk_createDate DATETIME
 		, brk_amount DECIMAL(18,4)
 		, brk_description VARCHAR(500)
-		, brk_wstatus VARCHAR(30)
+		, brk_wstatus VARCHAR(100)
 	)
 
 	;WITH cte_brokenessSIVE AS (
 		SELECT 
 			ROW_NUMBER() OVER(ORDER BY brk.lbrokeness_date ASC) AS [norows]
-			, 'SIVE' AS originSys
+			, '<span class="label label-warning">SIVE</span>' AS originSys
 			, REPLICATE('0', 5 - LEN(dep.id_departamento)) + CAST(dep.id_departamento AS varchar) + ' - ' + dep.descripcion AS branchOffice
 			, brk.codeSVA
-			, 'Quebranto' AS brkType 
+			, '<span class="label label-danger">Quebranto</span>' AS brkType 
 			, brk.lbrokeness_date
 		FROM SVA.dbo.td_brokenessLog brk 
 			INNER JOIN SVA.dbo.T_GARANTIA tgar ON (brk.codeSVA = tgar.sCODIGOBARRAS)
@@ -70,12 +73,11 @@ BEGIN
 		, b.reason 
 		, inv.credito AS credit
 		, CASE 
-			WHEN cred.[STATUS] = 0 AND cred.SUBSISTEMA = 0 THEN 'VIGENTE'
-			WHEN cred.[STATUS] = 0 AND cred.SUBSISTEMA = 1 THEN 'VENCIDO'
-			WHEN cred.[STATUS] = 1 AND cred.SUBSISTEMA = 0 THEN 'LIQ. CLIENTE'
-			WHEN cred.[STATUS] = 1 AND cred.SUBSISTEMA = 1 THEN 'VENDIDO'
+			WHEN cred.[STATUS] = 0 AND cred.SUBSISTEMA = 0 THEN '<span class="label label-primary">VIGENTE</span>'
+			WHEN cred.[STATUS] = 0 AND cred.SUBSISTEMA = 1 THEN '<span class="label label-danger">VENCIDO</span>'
+			WHEN cred.[STATUS] = 1 AND cred.SUBSISTEMA = 0 THEN '<span class="label label-success">LIQ. CLIENTE</span>'
+			WHEN cred.[STATUS] = 1 AND cred.SUBSISTEMA = 1 THEN '<span class="label label-info">VENDIDO</span>'
 		END AS warrantyStatus
-	--select * 
 	INTO #tmpSive
 	FROM #tmpbrokeness a
 		INNER JOIN cte_brokenessInventaio b ON (a.norows = b.norows)
@@ -84,12 +86,12 @@ BEGIN
 
 	;WITH cte_brokenessInventarios AS(
 		SELECT 
-			'INVENTARIOS' AS originSys
+			'<span class="label label-success">INVENTARIOS</span>' AS originSys
 			, REPLICATE('0', 5 - LEN(dep.id_departamento)) + CAST(dep.id_departamento AS varchar) + ' - ' + dep.descripcion AS branchOffice
 			, chkw.wlc_codeSVA AS codeSVA
 			, CASE 
-				WHEN cred.[STATUS] = 0 AND cred.SUBSISTEMA = 0 THEN 'Capital en riesgo'
-				ELSE 'Quebranto'
+				WHEN cred.[STATUS] = 0 AND cred.SUBSISTEMA = 0 THEN '<span class="label label-warning">Capital en riesgo</span>'
+				ELSE '<span class="label label-danger">Quebranto</span>'
 			END AS brkType
 			, chkw.wlc_createDate AS brkDate
 			, tdbrk.bknd_amountCharge AS amount
@@ -100,10 +102,10 @@ BEGIN
 			END AS responsibleUser
 			, inv.credito AS credit
 			, CASE 
-				WHEN cred.[STATUS] = 0 AND cred.SUBSISTEMA = 0 THEN 'VIGENTE'
-				WHEN cred.[STATUS] = 0 AND cred.SUBSISTEMA = 1 THEN 'VENCIDO'
-				WHEN cred.[STATUS] = 1 AND cred.SUBSISTEMA = 0 THEN 'LIQ. CLIENTE'
-				WHEN cred.[STATUS] = 1 AND cred.SUBSISTEMA = 1 THEN 'VENDIDO'
+				WHEN cred.[STATUS] = 0 AND cred.SUBSISTEMA = 0 THEN '<span class="label label-primary">VIGENTE</span>'
+				WHEN cred.[STATUS] = 0 AND cred.SUBSISTEMA = 1 THEN '<span class="label label-danger">VENCIDO</span>'
+				WHEN cred.[STATUS] = 1 AND cred.SUBSISTEMA = 0 THEN '<span class="label label-success">LIQ. CLIENTE</span>'
+				WHEN cred.[STATUS] = 1 AND cred.SUBSISTEMA = 1 THEN '<span class="label label-info">VENDIDO</span>'
 			END AS warrantyStatus
 			, chkw.wlc_id
 		FROM INVENTARIO.dbo.tp_checkListWarranty chkw
@@ -125,7 +127,7 @@ BEGIN
 
 	;WITH cte_brokenessAudit AS (
 		SELECT
-			'AUDITORIA' AS originSys
+			'<span class="label label-primary">AUDITORIA</span>' AS originSys
 			, ad.daud_code_sva AS codeSva
 			, ab.baud_amount_charge
 			, ab.baud_user_create
@@ -134,15 +136,15 @@ BEGIN
 			, ab.baud_comment
 			, ad.daud_credit
 			, CASE 
-				WHEN cred.[STATUS] = 0 AND cred.SUBSISTEMA = 0 THEN 'VIGENTE'
-				WHEN cred.[STATUS] = 0 AND cred.SUBSISTEMA = 1 THEN 'VENCIDO'
-				WHEN cred.[STATUS] = 1 AND cred.SUBSISTEMA = 0 THEN 'LIQ. CLIENTE'
-				WHEN cred.[STATUS] = 1 AND cred.SUBSISTEMA = 1 THEN 'VENDIDO'
+				WHEN cred.[STATUS] = 0 AND cred.SUBSISTEMA = 0 THEN '<span class="label label-primary">VIGENTE</span>'
+				WHEN cred.[STATUS] = 0 AND cred.SUBSISTEMA = 1 THEN '<span class="label label-danger">VENCIDO</span>'
+				WHEN cred.[STATUS] = 1 AND cred.SUBSISTEMA = 0 THEN '<span class="label label-success">LIQ. CLIENTE</span>'
+				WHEN cred.[STATUS] = 1 AND cred.SUBSISTEMA = 1 THEN '<span class="label label-info">VENDIDO</span>'
 			END AS warrantyStatus
 			, REPLICATE('0', 5 - LEN(dep.id_departamento)) + CAST(dep.id_departamento AS varchar) + ' - ' + dep.descripcion AS branchOffice
 			, CASE 
-				WHEN cred.[STATUS] = 0 AND cred.SUBSISTEMA = 0 THEN 'Capital en riesgo'
-				ELSE 'Quebranto'
+				WHEN cred.[STATUS] = 0 AND cred.SUBSISTEMA = 0 THEN '<span class="label label-warning">Capital en riesgo</span>'
+				ELSE '<span class="label label-danger">Quebranto</span>'
 			END AS brkType
 		FROM INVENTARIO.dbo.td_audit ad
 			INNER JOIN INVENTARIO.dbo.te_audit_bitacora ab ON (ad.daud_id = ab.daud_id)
@@ -213,6 +215,8 @@ BEGIN
 		 ROW_NUMBER() OVER(ORDER BY brk_createDate ASC) AS [no]
 		 , *
 	FROM #tmpbrk
+	WHERE (@startdate = '' AND @enddate = '') OR 
+	(CONVERT(varchar, brk_createDate, 112) BETWEEN @startdate AND @enddate)
 
 	DROP TABLE #tmpbrokeness
 	DROP TABLE #tmpSive
