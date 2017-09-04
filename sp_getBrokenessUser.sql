@@ -7,7 +7,7 @@ ALTER PROCEDURE [dbo].[sp_getBrokenessUser](
 AS*/
 BEGIN
 	DECLARE
-		@user VARCHAR(20) = 'gvargas'
+		@user VARCHAR(20) = 'franvp'
 		, @siveDate VARCHAR(20) = '20170201'
 		, @msg VARCHAR(300) = ''
 
@@ -33,17 +33,20 @@ BEGIN
 				, chk.wlc_createUser AS createUser
 			FROM INVENTARIO.dbo.tp_checkListWarranty chk
 				INNER JOIN INVENTARIO.dbo.tp_brokenness chkb ON (chk.wlc_id = chkb.wlc_id)
-				INNER JOIN INVENTARIO.dbo.td_brokenness chkbd ON (chkb.bkn_id = chkbd.bkn_id)
+				INNER JOIN INVENTARIO.dbo.td_brokenness chkbd ON (chkb.bkn_id = chkbd.bkn_id AND chkb.bknd_status = 1)
 				INNER JOIN SVA.dbo.T_GARANTIA tgar ON (chk.wlc_codeSVA = tgar.sCODIGOBARRAS)
 			WHERE wlc_respStageUser = @user
 				AND CONVERT(varchar,chk.wlc_createDate,112) >= @siveDate
-				AND (chk.sinv_id = 51 OR chk.sinv_id = 52)
+				AND (chk.sinv_id = 52)
 		)
 		SELECT 
 			*
 		INTO #brksive1
 		FROM cte_userbrkSive
 
+		SELECT *
+		FROM #brksive1
+ 
 		;WITH cte_userbrkSive1 AS (
 			SELECT
 				ROW_NUMBER() OVER(ORDER BY brk.lbrokeness_date ASC) AS [norows]
@@ -51,35 +54,36 @@ BEGIN
 			FROM SVA.dbo.td_brokenessLog brk
 			WHERE CONVERT(varchar,brk.lbrokeness_date,112) >= @siveDate
 		)
-		--select *
-		--from cte_userbrkSive1
 
 		SELECT sive.*
-		INTO #brksive
+		--INTO #brksive
 		FROM #brksive1 sive
 			INNER JOIN cte_userbrkSive1 b on (sive.norows = b.norows)
-
-		--SELECT * FROM #brksive
-		--WHERE codeSva = '20479860001'
-
-		SELECT 
-			--ROW_NUMBER() OVER(PARTITION BY codeSva ORDER BY codeSva ASC) AS [norows_copy]
-			 *
-		FROM #brksive
-		where ( norows = MAX(norows) )
-		--ORDER BY codeSva ASC
 		
+		--SELECT 
+		--	DISTINCT codeSva AS codigo
+		--INTO #brksive2
+		--FROM #brksive
 
-		SELECT 
-			--DISTINCT codeSva 
-			 SUM(amount)
-		FROM #brksive 
-		WHERE codeSva IN (SELECT DISTINCT codeSva FROM #brksive)
-			AND codeSva = '20479860001'
+		--SELECT *
+		--FROM #brksive2
+
+		--SELECT 
+		--	norows
+		--	, codeSva
+		--	, amount
+		--FROM #brksive
 		
+		--SELECT 
+		--	--DISTINCT codeSva 
+		--	 SUM(amount)
+		--FROM #brksive 
+		--WHERE 
+		--	AND codeSva = '20479860001'
 
 		DROP TABLE #brksive1
-		DROP TABLE #brksive
+		--DROP TABLE #brksive
+		--DROP TABLE #brksive2
 
 	END TRY
 	BEGIN CATCH
