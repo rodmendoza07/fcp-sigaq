@@ -47,7 +47,8 @@ BEGIN
 				INNER JOIN SVA.dbo.T_GARANTIA tgar ON (chk.wlc_codeSVA = tgar.sCODIGOBARRAS)
 			WHERE wlc_respStageUser = @user
 				AND (chk.sinv_id = 52)
-				AND CONVERT(varchar, chk.wlc_createDate, 112) BETWEEN @startdate AND @enddate
+				AND ((CONVERT(varchar, chk.wlc_createDate, 112) BETWEEN @startdate AND @enddate)
+					OR (@startdate = '' AND @enddate = ''))
 		)
 		SELECT 
 			*
@@ -59,7 +60,8 @@ BEGIN
 				ROW_NUMBER() OVER(ORDER BY brk.lbrokeness_date ASC) AS [norows]
 				, * 
 			FROM SVA.dbo.td_brokenessLog brk
-			WHERE CONVERT(varchar, brk.lbrokeness_date, 112) BETWEEN @startdate AND @enddate
+			WHERE ((CONVERT(varchar, brk.lbrokeness_date, 112) BETWEEN @startdate AND @enddate)
+					OR (@startdate = '' AND @enddate = ''))
 		)
 
 		SELECT sive.*
