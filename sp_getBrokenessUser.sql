@@ -1,15 +1,25 @@
-/*USE SIGAQ
+USE SIGAQ
 GO
 
 ALTER PROCEDURE [dbo].[sp_getBrokenessUser](
 	@user VARCHAR(20) = ''
+	, @startdate VARCHAR(15) = ''
+	, @enddate VARCHAR(15) = ''
 )
-AS*/
+AS
 BEGIN
 	DECLARE
-		@user VARCHAR(20) = 'franvp'
-		, @siveDate VARCHAR(20) = '20170201'
-		, @msg VARCHAR(300) = ''
+		--@siveDate VARCHAR(20) = '20170201'
+		@msg VARCHAR(300) = ''
+
+	CREATE TABLE #brk_user (
+		norows INT
+		, codeSva VARCHAR(20)
+		, amount DECIMAL(18,4)
+		, [description] VARCHAR(300)
+		, createDate DATETIME
+		, createUser VARCHAR(10)
+	)
 
 	BEGIN TRY
 		SELECT
@@ -33,57 +43,71 @@ BEGIN
 				, chk.wlc_createUser AS createUser
 			FROM INVENTARIO.dbo.tp_checkListWarranty chk
 				INNER JOIN INVENTARIO.dbo.tp_brokenness chkb ON (chk.wlc_id = chkb.wlc_id)
-				INNER JOIN INVENTARIO.dbo.td_brokenness chkbd ON (chkb.bkn_id = chkbd.bkn_id AND chkb.bknd_status = 1)
+				INNER JOIN INVENTARIO.dbo.td_brokenness chkbd ON (chkb.bkn_id = chkbd.bkn_id AND chkbd.bknd_status = 1)
 				INNER JOIN SVA.dbo.T_GARANTIA tgar ON (chk.wlc_codeSVA = tgar.sCODIGOBARRAS)
 			WHERE wlc_respStageUser = @user
-				AND CONVERT(varchar,chk.wlc_createDate,112) >= @siveDate
 				AND (chk.sinv_id = 52)
+				AND CONVERT(varchar, chk.wlc_createDate, 112) BETWEEN @startdate AND @enddate
 		)
 		SELECT 
 			*
 		INTO #brksive1
 		FROM cte_userbrkSive
-
-		SELECT *
-		FROM #brksive1
  
 		;WITH cte_userbrkSive1 AS (
 			SELECT
 				ROW_NUMBER() OVER(ORDER BY brk.lbrokeness_date ASC) AS [norows]
 				, * 
 			FROM SVA.dbo.td_brokenessLog brk
-			WHERE CONVERT(varchar,brk.lbrokeness_date,112) >= @siveDate
+			WHERE CONVERT(varchar, brk.lbrokeness_date, 112) BETWEEN @startdate AND @enddate
 		)
 
 		SELECT sive.*
-		--INTO #brksive
+		INTO #brksive
 		FROM #brksive1 sive
 			INNER JOIN cte_userbrkSive1 b on (sive.norows = b.norows)
-		
-		--SELECT 
-		--	DISTINCT codeSva AS codigo
-		--INTO #brksive2
-		--FROM #brksive
 
-		--SELECT *
-		--FROM #brksive2
+		;WITH cte_userbrkInventory AS (
+			SELECT 
+				ROW_NUMBER() OVER(ORDER BY inv.wlc_codeSva) AS [norows]
+				, wlc_codeSVA AS codeSva
+				, wlc_amount AS amount
+				, i.descripcion AS [description]
+				, inv.wlc_createDate AS createDate
+				, inv.wlc_createUser AS createUser
+			FROM INVENTARIO.dbo.tp_checkListWarranty inv
+				INNER JOIN INVENTARIO.dbo.tp_inventarios i ON (inv.wlc_codeSVA = i.codigo_garantia)
+			WHERE wlc_respStageUser = @user
+				AND sinv_id = 51
+				AND wlc_codeSVA NOT IN (SELECT DISTINCT codeSVA FROM SVA.dbo.td_brokenessLog)
+		)
+		SELECT 
+			* 
+		INTO #inventario1
+		FROM cte_userbrkInventory
 
-		--SELECT 
-		--	norows
-		--	, codeSva
-		--	, amount
-		--FROM #brksive
-		
-		--SELECT 
-		--	--DISTINCT codeSva 
-		--	 SUM(amount)
-		--FROM #brksive 
-		--WHERE 
-		--	AND codeSva = '20479860001'
+		INSERT INTO #brk_user(
+			norows
+			, codeSva
+			, amount
+			, [description]
+			, createDate
+			, createUser
+		)
+		SELECT
+			b.*
+		FROM #brksive b
+		UNION
+		SELECT *
+		FROM #inventario1
+
+		SELECT *
+		FROM #brk_user
 
 		DROP TABLE #brksive1
-		--DROP TABLE #brksive
-		--DROP TABLE #brksive2
+		DROP TABLE #brksive
+		DROP TABLE #inventario1
+		DROP TABLE #brk_user
 
 	END TRY
 	BEGIN CATCH
