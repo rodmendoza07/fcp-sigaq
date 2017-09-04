@@ -117,4 +117,4 @@ BEGIN
 	END CATCH
 END
 
--- EXEC SIGAQ.dbo.sp_getBrokenessUser 'luismer'
+-- EXEC SIGAQ.dbo.sp_getBrokenessUser 'gvargas', '20170901', '20170902'
