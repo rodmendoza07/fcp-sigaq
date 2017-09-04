@@ -1,15 +1,16 @@
-/*USE SIGAQ
+USE SIGAQ
 GO
 
 ALTER PROCEDURE [dbo].[sp_getBrokenessUser](
 	@user VARCHAR(20) = ''
+	, @startdate VARCHAR(15) = ''
+	, @enddate VARCHAR(15) = ''
 )
-AS*/
+AS
 BEGIN
 	DECLARE
-		@user VARCHAR(20) = 'franvp'
-		, @siveDate VARCHAR(20) = '20170201'
-		, @msg VARCHAR(300) = ''
+		--@siveDate VARCHAR(20) = '20170201'
+		@msg VARCHAR(300) = ''
 
 	CREATE TABLE #brk_user (
 		norows INT
@@ -45,8 +46,8 @@ BEGIN
 				INNER JOIN INVENTARIO.dbo.td_brokenness chkbd ON (chkb.bkn_id = chkbd.bkn_id AND chkbd.bknd_status = 1)
 				INNER JOIN SVA.dbo.T_GARANTIA tgar ON (chk.wlc_codeSVA = tgar.sCODIGOBARRAS)
 			WHERE wlc_respStageUser = @user
-				AND CONVERT(varchar,chk.wlc_createDate,112) >= @siveDate
 				AND (chk.sinv_id = 52)
+				AND CONVERT(varchar, chk.wlc_createDate, 112) BETWEEN @startdate AND @enddate
 		)
 		SELECT 
 			*
@@ -58,15 +59,13 @@ BEGIN
 				ROW_NUMBER() OVER(ORDER BY brk.lbrokeness_date ASC) AS [norows]
 				, * 
 			FROM SVA.dbo.td_brokenessLog brk
-			WHERE CONVERT(varchar,brk.lbrokeness_date,112) >= @siveDate
+			WHERE CONVERT(varchar, brk.lbrokeness_date, 112) BETWEEN @startdate AND @enddate
 		)
 
 		SELECT sive.*
 		INTO #brksive
 		FROM #brksive1 sive
 			INNER JOIN cte_userbrkSive1 b on (sive.norows = b.norows)
-		
-		--SELECT * FROM #brksive
 
 		;WITH cte_userbrkInventory AS (
 			SELECT 
@@ -86,9 +85,6 @@ BEGIN
 			* 
 		INTO #inventario1
 		FROM cte_userbrkInventory
-
-		--SELECT *
-		--FROM #inventario1
 
 		INSERT INTO #brk_user(
 			norows
