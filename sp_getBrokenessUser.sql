@@ -5,6 +5,7 @@ ALTER PROCEDURE [dbo].[sp_getBrokenessUser](
 	@user VARCHAR(20) = ''
 	, @startdate VARCHAR(15) = ''
 	, @enddate VARCHAR(15) = ''
+	, @enumber INT = -1
 )
 AS
 BEGIN
@@ -23,7 +24,7 @@ BEGIN
 	)
 
 	BEGIN TRY
-		IF @user = 'GCP' BEGIN
+		IF @user = 'GCP' OR @enumber = 0 BEGIN
 			SELECT
 				0 AS [number]
 				, 'GCP' AS [name]
@@ -45,9 +46,13 @@ BEGIN
 			FROM CATALOGOS.dbo.tc_empleados emp
 				INNER JOIN CATALOGOS.dbo.tc_puesto job ON (emp.cve_puesto = job.id_puesto)
 				INNER JOIN CATALOGOS.dbo.tc_departamento dep ON (emp.cve_depto = dep.id_departamento)
-			WHERE usuario = @user	
+			WHERE (emp.usuario = @user OR @user = '') AND (@enumber = -1 OR emp.noemp = @enumber)
 
-			SET @bkrUsr = @user
+			SELECT
+				@bkrUsr = usuario
+			FROM CATALOGOS.dbo.tc_empleados emp
+			WHERE (emp.usuario = @user OR @user = '') AND (@enumber = -1 OR emp.noemp = @enumber)
+
 		END
 		 
 		;WITH cte_userbrkSive AS (
@@ -136,4 +141,4 @@ BEGIN
 	END CATCH
 END
 
--- EXEC SIGAQ.dbo.sp_getBrokenessUser 'gvargas', '20170901', '20170902'
+-- EXEC SIGAQ.dbo.sp_getBrokenessUser 'gcp', '20170901', '20170902'
