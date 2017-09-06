@@ -11,6 +11,7 @@ BEGIN
 	DECLARE
 		--@siveDate VARCHAR(20) = '20170201'
 		@msg VARCHAR(300) = ''
+		, @bkrUsr VARCHAR(20) = ''
 
 	CREATE TABLE #brk_user (
 		norows INT
@@ -22,16 +23,32 @@ BEGIN
 	)
 
 	BEGIN TRY
-		SELECT
-			emp.nombre AS [name]
-			, emp.ap_paterno AS firstname
-			, emp.ap_materno AS lastname
-			, job.descripcion AS puesto
-			, REPLICATE('0', 5 - LEN(dep.id_departamento)) + CAST(dep.id_departamento AS varchar) + ' - ' + dep.descripcion AS branchOffice
-		FROM CATALOGOS.dbo.tc_empleados emp
-			INNER JOIN CATALOGOS.dbo.tc_puesto job ON (emp.cve_puesto = job.id_puesto)
-			INNER JOIN CATALOGOS.dbo.tc_departamento dep ON (emp.cve_depto = dep.id_departamento)
-		WHERE usuario = @user
+		IF @user = 'GCP' BEGIN
+			SELECT
+				0 AS [number]
+				, 'GCP' AS [name]
+				, '' AS firstname
+				, '' AS lastname
+				, '' AS puesto
+				, '' AS branchOffice
+
+			SET @bkrUsr = 'gvargas'
+		END
+		ELSE BEGIN
+			SELECT
+				emp.noemp AS [number]
+				, emp.nombre AS [name]
+				, emp.ap_paterno AS firstname
+				, emp.ap_materno AS lastname
+				, job.descripcion AS puesto
+				, REPLICATE('0', 5 - LEN(dep.id_departamento)) + CAST(dep.id_departamento AS varchar) + ' - ' + dep.descripcion AS branchOffice
+			FROM CATALOGOS.dbo.tc_empleados emp
+				INNER JOIN CATALOGOS.dbo.tc_puesto job ON (emp.cve_puesto = job.id_puesto)
+				INNER JOIN CATALOGOS.dbo.tc_departamento dep ON (emp.cve_depto = dep.id_departamento)
+			WHERE usuario = @user	
+
+			SET @bkrUsr = @user
+		END
 
 		;WITH cte_userbrkSive AS (
 			SELECT 
@@ -45,7 +62,7 @@ BEGIN
 				INNER JOIN INVENTARIO.dbo.tp_brokenness chkb ON (chk.wlc_id = chkb.wlc_id)
 				INNER JOIN INVENTARIO.dbo.td_brokenness chkbd ON (chkb.bkn_id = chkbd.bkn_id AND chkbd.bknd_status = 1)
 				INNER JOIN SVA.dbo.T_GARANTIA tgar ON (chk.wlc_codeSVA = tgar.sCODIGOBARRAS)
-			WHERE wlc_respStageUser = @user
+			WHERE wlc_respStageUser = @bkrUsr
 				AND (chk.sinv_id = 52)
 				AND ((CONVERT(varchar, chk.wlc_createDate, 112) BETWEEN @startdate AND @enddate)
 					OR (@startdate = '' AND @enddate = ''))
@@ -79,7 +96,7 @@ BEGIN
 				, inv.wlc_createUser AS createUser
 			FROM INVENTARIO.dbo.tp_checkListWarranty inv
 				INNER JOIN INVENTARIO.dbo.tp_inventarios i ON (inv.wlc_codeSVA = i.codigo_garantia)
-			WHERE wlc_respStageUser = @user
+			WHERE wlc_respStageUser = @bkrUsr
 				AND sinv_id = 51
 				AND wlc_codeSVA NOT IN (SELECT DISTINCT codeSVA FROM SVA.dbo.td_brokenessLog)
 		)
