@@ -49,7 +49,7 @@ BEGIN
 
 			SET @bkrUsr = @user
 		END
-
+		 
 		;WITH cte_userbrkSive AS (
 			SELECT 
 				ROW_NUMBER() OVER(ORDER BY chk.wlc_createDate ASC) AS [norows]
