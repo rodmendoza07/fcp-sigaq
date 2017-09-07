@@ -84,6 +84,7 @@ BEGIN
 		INNER JOIN INVENTARIO.dbo.tp_inventarios inv ON (a.codeSVA = inv.codigo_garantia)
 		INNER JOIN ISILOANSWEB.dbo.T_CRED cred ON (inv.credito = cred.NUMERO)
 
+	/************* Quebrantos Inventarios ********************/
 	;WITH cte_brokenessInventarios AS(
 		SELECT 
 			'<span class="label label-success">INVENTARIOS</span>' AS originSys
@@ -124,7 +125,7 @@ BEGIN
 	FROM cte_brokenessInventarios a
 		INNER JOIN INVENTARIO.dbo.td_checkListWarranty chkwd ON (a.wlc_id = chkwd.wlc_id AND chkwd.wlcd_id IN (SELECT MAX(wlcd_id) FROM INVENTARIO.dbo.td_checkListWarranty WHERE wlc_id = a.wlc_id))
 
-
+	/************* Quebrantos Auditoria ********************/
 	;WITH cte_brokenessAudit AS (
 		SELECT
 			'<span class="label label-primary">AUDITORIA</span>' AS originSys
@@ -155,7 +156,8 @@ BEGIN
 	SELECT *
 	INTO #tpmAudit
 	FROM cte_brokenessAudit
-		
+
+	/*************** Muestra datos ****************/	
 	INSERT INTO #tmpbrk (
 		brk_originSys
 		, brk_branchOffice
