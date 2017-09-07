@@ -1,18 +1,22 @@
-USE SIGAQ
-GO
+--USE SIGAQ
+--GO
 
-ALTER PROCEDURE [dbo].[sp_getBrokenessUser](
-	@user VARCHAR(20) = ''
-	, @startdate VARCHAR(15) = ''
-	, @enddate VARCHAR(15) = ''
-	, @enumber INT = -1
-)
-AS
+--ALTER PROCEDURE [dbo].[sp_getBrokenessUser](
+--	@user VARCHAR(20) = ''
+--	, @startdate VARCHAR(15) = ''
+--	, @enddate VARCHAR(15) = ''
+--	, @enumber INT = -1
+--)
+--AS
 BEGIN
 	DECLARE
 		--@siveDate VARCHAR(20) = '20170201'
 		@msg VARCHAR(300) = ''
 		, @bkrUsr VARCHAR(20) = ''
+		, @user VARCHAR(20) = ''
+		, @startdate VARCHAR(15) = ''
+		, @enddate VARCHAR(15) = ''
+		, @enumber INT = 954
 
 	CREATE TABLE #brk_user (
 		norows INT
@@ -69,21 +73,23 @@ BEGIN
 				INNER JOIN SVA.dbo.T_GARANTIA tgar ON (chk.wlc_codeSVA = tgar.sCODIGOBARRAS)
 			WHERE wlc_respStageUser = @bkrUsr
 				AND (chk.sinv_id = 52)
-				AND ((CONVERT(varchar, chk.wlc_createDate, 112) BETWEEN @startdate AND @enddate)
-					OR (@startdate = '' AND @enddate = ''))
+				--AND ((CONVERT(varchar, chk.wlc_createDate, 112) BETWEEN @startdate AND @enddate)
+					--OR (@startdate = '' AND @enddate = ''))
 		)
 		SELECT 
 			*
 		INTO #brksive1
 		FROM cte_userbrkSive
- 
+		
+		select * from #brksive1
+		/*
 		;WITH cte_userbrkSive1 AS (
 			SELECT
 				ROW_NUMBER() OVER(ORDER BY brk.lbrokeness_date ASC) AS [norows]
 				, * 
 			FROM SVA.dbo.td_brokenessLog brk
-			WHERE ((CONVERT(varchar, brk.lbrokeness_date, 112) BETWEEN @startdate AND @enddate)
-					OR (@startdate = '' AND @enddate = ''))
+			WHERE ((@startdate = '' AND @enddate = '')
+					OR (CONVERT(varchar, brk.lbrokeness_date, 112) BETWEEN @startdate AND @enddate))
 		)
 
 		SELECT sive.*
@@ -91,9 +97,11 @@ BEGIN
 		FROM #brksive1 sive
 			INNER JOIN cte_userbrkSive1 b on (sive.norows = b.norows)
 
+		select * from #brksive
+		*/
 		;WITH cte_userbrkInventory AS (
 			SELECT 
-				ROW_NUMBER() OVER(ORDER BY inv.wlc_codeSva) AS [norows]
+				ROW_NUMBER() OVER(ORDER BY inv.wlc_codeSva) AS [norows] 
 				, wlc_codeSVA AS codeSva
 				, wlc_amount AS amount
 				, i.descripcion AS [description]
@@ -103,13 +111,17 @@ BEGIN
 				INNER JOIN INVENTARIO.dbo.tp_inventarios i ON (inv.wlc_codeSVA = i.codigo_garantia)
 			WHERE wlc_respStageUser = @bkrUsr
 				AND sinv_id = 51
-				AND wlc_codeSVA NOT IN (SELECT DISTINCT codeSVA FROM SVA.dbo.td_brokenessLog)
+				AND ((@startdate = '' AND @enddate = '')
+					OR (CONVERT(varchar, inv.wlc_createDate, 112) BETWEEN @startdate AND @enddate))
+				--AND inv.wlc_codeSVA NOT IN (SELECT codeSVA FROM SVA.dbo.td_brokenessLog)
 		)
 		SELECT 
 			* 
 		INTO #inventario1
 		FROM cte_userbrkInventory
 
+		select * from #inventario1
+		
 		INSERT INTO #brk_user(
 			norows
 			, codeSva
@@ -117,19 +129,19 @@ BEGIN
 			, [description]
 			, createDate
 			, createUser
-		)
+		)/*
 		SELECT
 			b.*
 		FROM #brksive b
-		UNION
+		UNION*/
 		SELECT *
 		FROM #inventario1
 
 		SELECT *
 		FROM #brk_user
-
+		
 		DROP TABLE #brksive1
-		DROP TABLE #brksive
+		--DROP TABLE #brksive
 		DROP TABLE #inventario1
 		DROP TABLE #brk_user
 
