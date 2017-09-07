@@ -1,7 +1,7 @@
 USE SIGAQ
 GO
 
-CREATE PROCEDURE [dbo].[sp_getAllBrokeness] (
+ALTER PROCEDURE [dbo].[sp_getAllBrokeness] (
 	@startdate VARCHAR(30) = ''
 	, @enddate VARCHAR(330) = ''
 )
@@ -23,7 +23,7 @@ BEGIN
 		, brk_description VARCHAR(500)
 		, brk_wstatus VARCHAR(100)
 	)
-
+	/************* Quebrantos SIVE ********************/
 	;WITH cte_brokenessSIVE AS (
 		SELECT 
 			ROW_NUMBER() OVER(ORDER BY brk.lbrokeness_date ASC) AS [norows]
@@ -61,7 +61,7 @@ BEGIN
 			INNER JOIN SVA.dbo.tc_brokenessTypes p ON (p.tbrokeness_id = tbrk.tbrokeness_parent)
 			INNER JOIN SVA.dbo.tc_brokenessTypes gp ON (gp.tbrokeness_id = p.tbrokeness_parent)
 			
-		WHERE chk.sinv_id = 51 OR chk.sinv_id = 52
+		WHERE /*chk.sinv_id = 51 OR*/ chk.sinv_id = 52
 			AND CONVERT(varchar, chk.wlc_createDate, 112) >= @begenningDate
 	)
 	
@@ -84,6 +84,7 @@ BEGIN
 		INNER JOIN INVENTARIO.dbo.tp_inventarios inv ON (a.codeSVA = inv.codigo_garantia)
 		INNER JOIN ISILOANSWEB.dbo.T_CRED cred ON (inv.credito = cred.NUMERO)
 
+	/************* Quebrantos Inventarios ********************/
 	;WITH cte_brokenessInventarios AS(
 		SELECT 
 			'<span class="label label-success">INVENTARIOS</span>' AS originSys
@@ -124,7 +125,7 @@ BEGIN
 	FROM cte_brokenessInventarios a
 		INNER JOIN INVENTARIO.dbo.td_checkListWarranty chkwd ON (a.wlc_id = chkwd.wlc_id AND chkwd.wlcd_id IN (SELECT MAX(wlcd_id) FROM INVENTARIO.dbo.td_checkListWarranty WHERE wlc_id = a.wlc_id))
 
-
+	/************* Quebrantos Auditoria ********************/
 	;WITH cte_brokenessAudit AS (
 		SELECT
 			'<span class="label label-primary">AUDITORIA</span>' AS originSys
@@ -155,7 +156,8 @@ BEGIN
 	SELECT *
 	INTO #tpmAudit
 	FROM cte_brokenessAudit
-		
+
+	/*************** Muestra datos ****************/	
 	INSERT INTO #tmpbrk (
 		brk_originSys
 		, brk_branchOffice
