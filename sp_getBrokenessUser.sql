@@ -2,7 +2,7 @@ USE SIGAQ
 GO
 
 ALTER PROCEDURE [dbo].[sp_getBrokenessUser](
-	@user VARCHAR(20) = ''
+	@user VARCHAR(20) = 'n'
 	, @startdate VARCHAR(15) = ''
 	, @enddate VARCHAR(15) = ''
 	, @enumber INT = -1
@@ -52,12 +52,12 @@ BEGIN
 			FROM CATALOGOS.dbo.tc_empleados emp
 				INNER JOIN CATALOGOS.dbo.tc_puesto job ON (emp.cve_puesto = job.id_puesto)
 				INNER JOIN CATALOGOS.dbo.tc_departamento dep ON (emp.cve_depto = dep.id_departamento)
-			WHERE (emp.usuario = @user OR @user = '') AND (@enumber = -1 OR emp.noemp = @enumber)
+			WHERE (emp.usuario = @user OR @user = 'n') AND (@enumber = -1 OR emp.noemp = @enumber)
 
 			SELECT
 				@bkrUsr = usuario
 			FROM CATALOGOS.dbo.tc_empleados emp
-			WHERE (emp.usuario = @user OR @user = '') AND (@enumber = -1 OR emp.noemp = @enumber)
+			WHERE (emp.usuario = @user OR @user = 'n') AND (@enumber = -1 OR emp.noemp = @enumber)
 
 		END
 		 
@@ -246,7 +246,7 @@ BEGIN
 		FROM #tmpbrk
 
 		SELECT
-			SUM(brk_amount) AS brk_atotal
+			ISNULL(SUM(brk_amount),0) AS brk_atotal
 		FROM #tmpbrk
 
 		DROP TABLE #tmpSive
