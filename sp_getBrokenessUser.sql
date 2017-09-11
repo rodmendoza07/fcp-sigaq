@@ -34,10 +34,10 @@ BEGIN
 			SELECT
 				0 AS [number]
 				, 'GCP' AS [name]
-				, '' AS firstname
-				, '' AS lastname
-				, '' AS puesto
-				, '' AS branchOffice
+				, 'N/A' AS firstname
+				, 'N/A' AS lastname
+				, 'N/A' AS puesto
+				, 'N/A' AS branchOffice
 
 			SET @bkrUsr = 'gvargas'
 		END
