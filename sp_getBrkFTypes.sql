@@ -1,0 +1,11 @@
+USE CATALOGOS
+GO
+
+CREATE PROCEDURE [dbo].[sp_getBrkFTypes]
+AS
+BEGIN
+	SELECT *
+	FROM CATALOGOS.dbo.tc_brkFinanceType
+END
+
+--EXEC CATALOGOS.dbo.sp_getBrkFTypes
