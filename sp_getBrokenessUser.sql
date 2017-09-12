@@ -6,6 +6,7 @@ ALTER PROCEDURE [dbo].[sp_getBrokenessUser](
 	, @startdate VARCHAR(15) = ''
 	, @enddate VARCHAR(15) = ''
 	, @enumber INT = -1
+	, @audit INT = 0
 )
 AS
 BEGIN
@@ -51,17 +52,31 @@ BEGIN
 				, job.descripcion AS puesto
 				, REPLICATE('0', 5 - LEN(dep.id_departamento)) + CAST(dep.id_departamento AS varchar) + ' - ' + dep.descripcion AS branchOffice
 				, emp.usuario AS userName
+				, CASE
+					WHEN emp.estatus <> 1 THEN 'label label-danger'
+					ELSE 'label label-primary'
+				END AS [classU]
+				, CASE
+					WHEN emp.estatus <> 1 THEN 'Inactivo'
+					ELSE 'Activo'
+				END AS [status]
 			FROM CATALOGOS.dbo.tc_empleados emp
 				INNER JOIN CATALOGOS.dbo.tc_puesto job ON (emp.cve_puesto = job.id_puesto)
 				INNER JOIN CATALOGOS.dbo.tc_departamento dep ON (emp.cve_depto = dep.id_departamento)
 			WHERE (emp.usuario = @user OR @user = 'n') AND (@enumber = -1 OR emp.noemp = @enumber)
-				AND emp.estatus = 1
+				AND (emp.estatus = 1 OR @audit = 1)
 
 			SELECT
 				@bkrUsr = usuario
 			FROM CATALOGOS.dbo.tc_empleados emp
 			WHERE (emp.usuario = @user OR @user = 'n') AND (@enumber = -1 OR emp.noemp = @enumber)
-				AND emp.estatus = 1
+				AND (emp.estatus = 1 OR @audit = 1)
+
+			IF @bkrUsr = '' BEGIN
+				SET @msg = 'Empleado inactivo'
+				RAISERROR(@msg, 16, 1)
+				RETURN
+			END
 
 		END
 		 
@@ -260,7 +275,9 @@ BEGIN
 
 	END TRY
 	BEGIN CATCH
-		SET @msg = (SELECT SUBSTRING(ERROR_MESSAGE(), 1, 300))
+		IF @msg = '' BEGIN
+			SET @msg = (SELECT SUBSTRING(ERROR_MESSAGE(), 1, 300))
+		END
 		RAISERROR(@msg, 16, 1)
 		RETURN
 	END CATCH
