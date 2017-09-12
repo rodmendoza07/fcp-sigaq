@@ -38,6 +38,7 @@ BEGIN
 				, 'N/A' AS lastname
 				, 'N/A' AS puesto
 				, 'N/A' AS branchOffice
+				, 'N/A' AS userName
 
 			SET @bkrUsr = 'gvargas'
 		END
@@ -49,6 +50,7 @@ BEGIN
 				, emp.ap_materno AS lastname
 				, job.descripcion AS puesto
 				, REPLICATE('0', 5 - LEN(dep.id_departamento)) + CAST(dep.id_departamento AS varchar) + ' - ' + dep.descripcion AS branchOffice
+				, emp.usuario AS userName
 			FROM CATALOGOS.dbo.tc_empleados emp
 				INNER JOIN CATALOGOS.dbo.tc_puesto job ON (emp.cve_puesto = job.id_puesto)
 				INNER JOIN CATALOGOS.dbo.tc_departamento dep ON (emp.cve_depto = dep.id_departamento)
