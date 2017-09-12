@@ -53,11 +53,13 @@ BEGIN
 				INNER JOIN CATALOGOS.dbo.tc_puesto job ON (emp.cve_puesto = job.id_puesto)
 				INNER JOIN CATALOGOS.dbo.tc_departamento dep ON (emp.cve_depto = dep.id_departamento)
 			WHERE (emp.usuario = @user OR @user = 'n') AND (@enumber = -1 OR emp.noemp = @enumber)
+				AND emp.estatus = 1
 
 			SELECT
 				@bkrUsr = usuario
 			FROM CATALOGOS.dbo.tc_empleados emp
 			WHERE (emp.usuario = @user OR @user = 'n') AND (@enumber = -1 OR emp.noemp = @enumber)
+				AND emp.estatus = 1
 
 		END
 		 
