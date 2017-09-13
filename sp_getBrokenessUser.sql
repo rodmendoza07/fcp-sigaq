@@ -1,4 +1,4 @@
-USE SIGAQ
+USE CATALOGOS
 GO
 
 ALTER PROCEDURE [dbo].[sp_getBrokenessUser](
