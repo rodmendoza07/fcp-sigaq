@@ -1,7 +1,7 @@
 USE CATALOGOS
 GO
 
-CREATE PROCEDURE [dbo].[sp_setBrkFinance](
+ALTER PROCEDURE [dbo].[sp_setBrkFinance](
 	@brkType INT
 	, @brkBo INT
 	, @brkAmount DECIMAL(18,4)
@@ -9,6 +9,7 @@ CREATE PROCEDURE [dbo].[sp_setBrkFinance](
 	, @brkUserName VARCHAR(15)
 	, @brkEId INT
 	, @cUser VARCHAR(15)
+	, @brkDate VARCHAR(20)
 )
 AS
 BEGIN
