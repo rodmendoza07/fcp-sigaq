@@ -1,7 +1,7 @@
 USE CATALOGOS
 GO
 
-ALTER PROCEDURE [dbo].[sp_getBrkFTypes]
+CREATE PROCEDURE [dbo].[sp_getBrkFTypes]
 AS
 BEGIN
 	SELECT *

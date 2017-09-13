@@ -1,7 +1,7 @@
 USE CATALOGOS
 GO
 
-CREATE PROCEDURE [dbo].[sp_getBrokenessUser](
+ALTER PROCEDURE [dbo].[sp_getBrokenessUser](
 	@user VARCHAR(20) = 'n'
 	, @startdate VARCHAR(15) = ''
 	, @enddate VARCHAR(15) = ''
@@ -40,6 +40,7 @@ BEGIN
 				, 'N/A' AS puesto
 				, 'N/A' AS branchOffice
 				, 'N/A' AS userName
+				, 'N/A' AS Eid
 
 			SET @bkrUsr = 'gvargas'
 		END
@@ -60,6 +61,7 @@ BEGIN
 					WHEN emp.estatus <> 1 THEN 'Inactivo'
 					ELSE 'Activo'
 				END AS [status]
+				, emp.id_empleados AS [Eid]
 			FROM CATALOGOS.dbo.tc_empleados emp
 				INNER JOIN CATALOGOS.dbo.tc_puesto job ON (emp.cve_puesto = job.id_puesto)
 				INNER JOIN CATALOGOS.dbo.tc_departamento dep ON (emp.cve_depto = dep.id_departamento)
