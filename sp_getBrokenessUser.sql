@@ -14,6 +14,7 @@ BEGIN
 		--@siveDate VARCHAR(20) = '20170201'
 		@msg VARCHAR(300) = ''
 		, @bkrUsr VARCHAR(20) = ''
+		, @brkTotalAmount DECIMAL(18,4) = 0
 
 	CREATE TABLE #tmpbrk (
 		brk_originSys VARCHAR(100)
@@ -297,6 +298,11 @@ BEGIN
 		SELECT
 			ISNULL(SUM(brk_amount),0) AS brk_atotal
 		FROM #tmpbrk
+
+		SELECT
+			ISNULL(SUM(brkp_amount))
+		FROM CATALOGOS.dbo.tp_brkPayments
+		WHERE brkp_payUSer = @bkrUsr		
 
 		DROP TABLE #tmpSive
 		DROP TABLE #tmpInventarios
