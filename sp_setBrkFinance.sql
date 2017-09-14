@@ -6,10 +6,11 @@ ALTER PROCEDURE [dbo].[sp_setBrkFinance](
 	, @brkBo INT
 	, @brkAmount DECIMAL(18,4)
 	, @brkEnumber INT
-	, @brkUserName INT
+	, @brkUserName VARCHAR(15)
 	, @brkEId INT
-	, @cUser VARCHAR(15)
+	, @cUser INT
 	, @brkDate VARCHAR(20)
+	, @brkComment VARCHAR(350)
 )
 AS
 BEGIN
@@ -22,7 +23,7 @@ BEGIN
 		SELECT
 			@userName = usuario
 		FROM CATALOGOS.dbo.tc_empleados
-		WHERE id_empleados = @brkUserName
+		WHERE id_empleados = @cUser
 		
 		BEGIN TRAN 
 			INSERT INTO CATALOGOS.dbo.tp_brkEmpFAsign(
@@ -34,6 +35,7 @@ BEGIN
 				, brkemp_empId
 				, brkemp_cUser
 				, brkemp_brkDate
+				, brkemp_comment
 			) VALUES (
 				@brkType
 				, @brkBo
@@ -41,8 +43,9 @@ BEGIN
 				, @brkEnumber
 				, @brkUserName
 				, @brkEId
-				, @cUser
+				, @userName
 				, @brkDate
+				, @brkComment
 			)
 		COMMIT TRAN
 	END TRY

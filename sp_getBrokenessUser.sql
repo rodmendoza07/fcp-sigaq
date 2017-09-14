@@ -198,7 +198,31 @@ BEGIN
 		SELECT *
 		INTO #tpmAudit
 		FROM cte_brokenessAudit
-		
+
+		/************************ Quebrantos Finanzas *******************************/
+		;WITH cte_brkFinance AS (
+			SELECT
+				'<span class="label label-info">FINANZAS</span>' AS originSys
+				, REPLICATE('0', 5 - LEN(dep.id_departamento)) + CAST(dep.id_departamento AS varchar) + ' - ' + dep.descripcion AS branchOffice
+				, 'N/A' AS credit
+				, 'N/A' AS codeSva
+				, '<span class="label label-danger">Quebranto</span>' AS [type]
+				, brkf.brkemp_cUser
+				, brkf.brkemp_userName
+				, brkf.brkemp_brkDate
+				, brkf.brkemp_amount
+				, brkt.brkf_type
+				, 'N/A' AS [status]
+			FROM CATALOGOS.dbo.tp_brkEmpFAsign brkf
+				INNER JOIN CATALOGOS.dbo.tc_departamento dep ON (brkf.brkemp_branchOffice = dep.id_departamento)
+				INNER JOIN CATALOGOS.dbo.tc_brkFinanceType brkt ON (brkf.brkemp_type = brkt.brkf_id)
+			WHERE brkf.brkemp_userName = @bkrUsr
+		)
+		SELECT *
+		INTO #brkFinance
+		FROM cte_brkFinance
+
+
 		/*************** Muestra datos ****************/	
 		INSERT INTO #tmpbrk (
 			brk_originSys
@@ -254,6 +278,10 @@ BEGIN
 			, a.baud_comment
 			, a.warrantyStatus
 		FROM #tpmAudit a
+		UNION
+		SELECT
+			*
+		FROM #brkFinance
 
 		SELECT 
 			 ROW_NUMBER() OVER(ORDER BY brk_createDate ASC) AS [no]
@@ -273,6 +301,7 @@ BEGIN
 		DROP TABLE #tmpSive
 		DROP TABLE #tmpInventarios
 		DROP TABLE #tpmAudit
+		DROP TABLE #brkFinance
 		DROP TABLE #tmpbrk
 
 	END TRY
@@ -285,4 +314,4 @@ BEGIN
 	END CATCH
 END
 
--- EXEC SIGAQ.dbo.sp_getBrokenessUser 'gcp', '20170901', '20170902'
+-- EXEC CATALOGOS.dbo.sp_getBrokenessUser 'gcp', '20170901', '20170902'
