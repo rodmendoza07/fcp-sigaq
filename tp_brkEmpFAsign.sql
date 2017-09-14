@@ -12,4 +12,5 @@ CREATE TABLE tp_brkEmpFAsign (
 	, brkemp_cUser VARCHAR(15) NOT NULL CONSTRAINT DEF_brkemp_cUser DEFAULT('')
 	, brkemp_brkDate DATETIME NOT NULL CONSTRAINT DEF_brkemp_brkDate DEFAULT(GETDATE())
 	, brkemp_cDate DATETIME NOT NULL CONSTRAINT DEF_brkemp_cDate DEFAULT(GETDATE())
+	, brkemp_comment VARCHAR(350) NOT NULL CONSTRAINT DEF_brkemp_comment DEFAULT('')
 )
