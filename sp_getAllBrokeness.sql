@@ -78,8 +78,8 @@ BEGIN
 			, tdbrk.bknd_amountCharge AS amount
 			, chkw.wlc_createUser AS createUser
 			, CASE
-				WHEN chkw.wlc_respStageUser = 'gvargas' THEN 'GCP'
-				ELSE chkw.wlc_respStageUser
+				WHEN tdbrk.bknd_userCharge  = 'gvargas' THEN 'GCP'
+				ELSE tdbrk.bknd_userCharge 
 			END AS responsibleUser
 			, inv.credito AS credit
 			, CASE 

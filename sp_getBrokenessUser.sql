@@ -14,6 +14,8 @@ BEGIN
 		--@siveDate VARCHAR(20) = '20170201'
 		@msg VARCHAR(300) = ''
 		, @bkrUsr VARCHAR(20) = ''
+		, @brkTotalPayment DECIMAL(18,4) = 0
+		, @brkTotalCharge DECIMAL(18,4) = 0
 		, @brkTotalAmount DECIMAL(18,4) = 0
 
 	CREATE TABLE #tmpbrk (
@@ -138,8 +140,8 @@ BEGIN
 				, tdbrk.bknd_amountCharge AS amount
 				, chkw.wlc_createUser AS createUser
 				, CASE
-					WHEN chkw.wlc_respStageUser = 'gvargas' THEN 'GCP'
-					ELSE chkw.wlc_respStageUser
+					WHEN tdbrk.bknd_userCharge = 'gvargas' THEN 'GCP'
+					ELSE tdbrk.bknd_userCharge 
 				END AS responsibleUser
 				, inv.credito AS credit
 				, CASE 
@@ -296,13 +298,18 @@ BEGIN
 		FROM #tmpbrk
 
 		SELECT
-			ISNULL(SUM(brk_amount),0) AS brk_atotal
+			@brkTotalCharge = ISNULL(SUM(brk_amount),0)
 		FROM #tmpbrk
 
 		SELECT
-			ISNULL(SUM(brkp_amount))
+			@brkTotalPayment = ISNULL(SUM(brkp_amount),0)
 		FROM CATALOGOS.dbo.tp_brkPayments
-		WHERE brkp_payUSer = @bkrUsr		
+		WHERE brkp_payUSer = @bkrUsr
+		
+		SELECT
+			@brkTotalAmount = @brkTotalCharge - @brkTotalPayment
+
+		SELECT @brkTotalAmount  AS brk_atotal
 
 		DROP TABLE #tmpSive
 		DROP TABLE #tmpInventarios
@@ -320,4 +327,4 @@ BEGIN
 	END CATCH
 END
 
--- EXEC CATALOGOS.dbo.sp_getBrokenessUser 'gcp', '20170901', '20170902'
+-- EXEC CATALOGOS.dbo.sp_getBrokenessUser 'luismer', '', ''
