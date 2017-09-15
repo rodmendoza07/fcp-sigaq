@@ -47,13 +47,14 @@ BEGIN
 				@wId = wp.brkwp_id
 				, @codeSva = wp.brkwp_codeSva
 				, @wAmount = wp.brkwp_amount
+				, @paycDate = wp.brkwp_brkDate
 			FROM CATALOGOS.dbo.tp_brkWarrantyToPay wp
 			WHERE wp.brkwp_brkUser = @empUser
 				AND wp.brkwp_codeSva NOT IN (SELECT
 												pay.brkp_codeSvaApp
 											 FROM CATALOGOS.dbo.tp_brkPayments pay
 											 WHERE pay.brkp_payUser = @empUser 
-												AND pay.brkp_cDate = )
+												AND pay.brkp_brkDate = @paycDate)
 			ORDER BY wp.brkwp_brkDate DESC
 
 			SELECT @wId, @codeSva
@@ -66,6 +67,7 @@ BEGIN
 				, brkp_cUser
 				, brkp_amount
 				, brkp_cDate
+				, brkp_brkDate
 			) VALUES (
 				@empId
 				, @empNumber
@@ -73,6 +75,7 @@ BEGIN
 				, @cUser
 				, @paymentAmount
 				, @paymentDate
+				, @paycDate
 			)
 
 			SELECT @lastpay = @@IDENTITY
