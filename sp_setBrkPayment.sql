@@ -18,6 +18,8 @@ BEGIN
 		, @wAmount DECIMAL(18,4)
 		, @codeSva VARCHAR(20)
 		, @wId INT
+		, @lastpay INT
+		, @paycDate DATETIME
 
 	BEGIN TRY
 		SELECT
@@ -39,26 +41,58 @@ BEGIN
 
 		SELECT @amountTotal
 
-		WHILE (SELECT wp.brkwp_amount FROM CATALOGOS.dbo.tp_brkWarrantyToPay wp WHERE wp.brkwp_brkUser = @empUser
-					AND wp.brkwp_codeSva NOT IN (SELECT pay.brkp_codeSvaApp  FROM CATALOGOS.dbo.tp_brkPayments pay)
-		ORDER BY wp.brkwp_brkDate DESC) <= @amountTotal
+		WHILE @amountTotal > 0
 		BEGIN
+			SELECT
+				@wId = wp.brkwp_id
+				, @codeSva = wp.brkwp_codeSva
+				, @wAmount = wp.brkwp_amount
+			FROM CATALOGOS.dbo.tp_brkWarrantyToPay wp
+			WHERE wp.brkwp_brkUser = @empUser
+				AND wp.brkwp_codeSva NOT IN (SELECT
+												pay.brkp_codeSvaApp
+											 FROM CATALOGOS.dbo.tp_brkPayments pay
+											 WHERE pay.brkp_payUser = @empUser 
+												AND pay.brkp_cDate = )
+			ORDER BY wp.brkwp_brkDate DESC
+
+			SELECT @wId, @codeSva
+
+			--select @amountTotal = @amountTotal - 10
 			INSERT INTO CATALOGOS.dbo.tp_brkPayments (
 				brkp_Eid
 				, brkp_nemp
 				, brkp_payUser
 				, brkp_cUser
 				, brkp_amount
+				, brkp_cDate
 			) VALUES (
-				
+				@empId
+				, @empNumber
+				, @empUser
+				, @cUser
+				, @paymentAmount
+				, @paymentDate
 			)
+
+			SELECT @lastpay = @@IDENTITY
+
+			IF @wAmount <= @amountTotal BEGIN
+				UPDATE CATALOGOS.dbo.tp_brkPayments SET
+					brkp_paymentApp = 0
+					, brkp_codeSvaApp = @codeSva
+			END
+
 		END
 
+		select 
+		'sale'
+		, @amountTotal
 
 		SELECT
-			--@wId = wp.brkwp_id
-			--, @codeSva = wp.brkwp_codeSva
-			@wAmount = wp.brkwp_amount
+			@wId = wp.brkwp_id
+			, @codeSva = wp.brkwp_codeSva
+			, @wAmount = wp.brkwp_amount
 		FROM CATALOGOS.dbo.tp_brkWarrantyToPay wp
 		WHERE wp.brkwp_brkUser = @empUser
 			AND wp.brkwp_codeSva NOT IN (SELECT
