@@ -9,6 +9,7 @@ CREATE TABLE tp_brkPayments(
 	, brkp_cUser VARCHAR(15) NOT NULL CONSTRAINT DEF_brkp_cUser DEFAULT('')
 	, brkp_amount DECIMAL(18,4) NOT NULL CONSTRAINT DEF_brkp_amount DEFAULT('')
 	, brkp_cDate DATETIME NOT NULL CONSTRAINT DEF_brkp_cDate DEFAULT(GETDATE())
+	, brkp_brkDate DATETIME NOT NULL CONSTRAINT DEF_brkp_brkDAte DEFAULT(GETDATE())
 	, brkp_paymentApp BIT NOT NULL CONSTRAINT DEF_brkp_paymentApp DEFAULT(1)
 	, brkp_codeSvaApp VARCHAR(20) NOT NULL CONSTRAINT DEF_brkp_codeSvaApp DEFAULT('')
 )
