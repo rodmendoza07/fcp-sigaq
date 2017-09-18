@@ -1,7 +1,7 @@
 USE CATALOGOS
 GO
 
-ALTER PROCEDURE [dbo].[sp_getAllBrokeness] (
+CREATE PROCEDURE [dbo].[sp_getAllBrokeness] (
 	@startdate VARCHAR(30) = ''
 	, @enddate VARCHAR(330) = ''
 )

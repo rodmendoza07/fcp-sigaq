@@ -25,8 +25,8 @@ BEGIN
 	END
 
 	DECLARE
-		--@startDate DATETIME = '2017-09-13 00:00:00.000'
-		@startDate DATETIME = GETDATE()
+		@startDate DATETIME = '2017-09-13 00:00:00.000'
+		--@startDate DATETIME = GETDATE()
 		, @msg VARCHAR(300) = ''
 
 	BEGIN TRY

@@ -10,5 +10,5 @@ CREATE TABLE tp_brkWarrantyToPay (
 	, brkwp_brkUser VARCHAR(20) NOT NULL CONSTRAINT DEF_brkwp_brkUser DEFAULT('')
 	, brkwp_brkDate DATETIME NOT NULL CONSTRAINT DEF_brkwp_brkDate DEFAULT(GETDATE())
 	, brkwp_paymentAppId INT NOT NULL CONSTRAINT DEF_brkwp_paymentAppId DEFAULT(0)
-	, brkwp_paymentAppDate DATETIME NOT NULL CONSTRAINT DEF_brkwp_paymentAppDate DEFAULT(GETDATE())
+	, brkwp_paymentAppDate DATETIME NOT NULL CONSTRAINT DEF_brkwp_paymentAppDate DEFAULT('')
 )
