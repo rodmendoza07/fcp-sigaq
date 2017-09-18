@@ -25,6 +25,12 @@ BEGIN
 		, @paymentAppAux INT = 1
 
 	BEGIN TRY
+		IF @paymentAmount = 0 BEGIN
+			SET @msg = 'No se pueden abonar cantidades en Cero'
+			RAISERROR(@msg, 16, 1)
+			RETURN
+		END
+
 		BEGIN TRAN
 		SELECT
 			@empId = emp.id_empleados
@@ -176,11 +182,14 @@ BEGIN
 		SET @aux = 0
 		IF @@TRANCOUNT > 0 
 			COMMIT TRAN
+			SELECT 'SUCCESS' AS success
 
 	END TRY
 	BEGIN CATCH
 		ROLLBACK TRAN
-		SET @msg = (SELECT SUBSTRING(ERROR_MESSAGE(), 1, 300))
+		IF @msg = '' BEGIN
+			SET @msg = (SELECT SUBSTRING(ERROR_MESSAGE(), 1, 300))
+		END
 		RAISERROR(@msg, 16, 1)
 	END CATCH
 END
