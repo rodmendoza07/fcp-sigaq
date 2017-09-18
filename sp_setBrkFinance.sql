@@ -1,7 +1,7 @@
 USE CATALOGOS
 GO
 
-CREATE PROCEDURE [dbo].[sp_setBrkFinance](
+ALTER PROCEDURE [dbo].[sp_setBrkFinance](
 	@brkType INT
 	, @brkBo INT
 	, @brkAmount DECIMAL(18,4)
@@ -48,6 +48,7 @@ BEGIN
 				, @brkComment
 			)
 		COMMIT TRAN
+		SELECT 'SUCCESS' AS success
 	END TRY
 	BEGIN CATCH
 		ROLLBACK TRAN
