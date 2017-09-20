@@ -86,7 +86,7 @@ BEGIN
 		END CATCH
 	END
 
-	IF @opt = 4 BEGIN
+	IF @opt = 3 BEGIN
 		BEGIN TRY
 			IF @paymentAmount <= 0 BEGIN
 				SET @msg = 'No se pueden abonar cantidades en Cero'
