@@ -1,7 +1,7 @@
 USE CATALOGOS
 GO
 
-ALTER PROCEDURE [dbo].[sp_setBrkWarrantyToPay]
+CREATE PROCEDURE [dbo].[sp_setBrkWarrantyToPay]
 AS
 BEGIN
 	IF OBJECT_ID('tempdb..#tmpSive') IS NOT NULL

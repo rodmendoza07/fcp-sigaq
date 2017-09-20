@@ -6,6 +6,7 @@ ALTER PROCEDURE [dbo].[sp_setBrkPayment](
 	, @paymentAmount DECIMAL(18,4)
 	, @paymentDate VARCHAR(20)
 	, @cUser VARCHAR(15)
+	, @opt INT = 0
 )
 AS
 BEGIN
@@ -23,175 +24,185 @@ BEGIN
 		, @aux INT = 0
 		, @payment DECIMAL(18,4)
 		, @paymentAppAux INT = 1
-
-	BEGIN TRY
-		IF @paymentAmount = 0 BEGIN
-			SET @msg = 'No se pueden abonar cantidades en Cero'
-			RAISERROR(@msg, 16, 1)
-			RETURN
-		END
-
-		BEGIN TRAN
+	
+	IF @opt = 0 BEGIN
 		SELECT
-			@empId = emp.id_empleados
-			, @empUser = emp.usuario
-		FROM CATALOGOS.dbo.tc_empleados emp
-		WHERE emp.noemp = @empNumber
+			ISNULL(COUNT(*),0) AS employee
+		FROM CATALOGOS.dbo.tc_empleados
+		WHERE estatus = 1
+			AND usuario = @cUser
+	END
 
-		SELECT
-			@amountAcum = ISNULL(SUM(pay.brkp_amount),0)
-		FROM CATALOGOS.dbo.tp_brkPayments pay
-		WHERE pay.brkp_Eid = @empId
-			AND pay.brkp_paymentApp = 1
+	IF @opt = 1 BEGIN
+		BEGIN TRY
+			IF @paymentAmount = 0 BEGIN
+				SET @msg = 'No se pueden abonar cantidades en Cero'
+				RAISERROR(@msg, 16, 1)
+				RETURN
+			END
 
-		SET @amountTotal = @amountAcum + @paymentAmount
-
-		WHILE @amountTotal > 0
-		BEGIN
+			BEGIN TRAN
+			SELECT
+				@empId = emp.id_empleados
+				, @empUser = emp.usuario
+			FROM CATALOGOS.dbo.tc_empleados emp
+			WHERE emp.noemp = @empNumber
 
 			SELECT
-				@wId = wp.brkwp_id
-				, @codeSva = wp.brkwp_codeSva
-				, @wAmount = wp.brkwp_amount
-				, @paycDate = wp.brkwp_brkDate
-			FROM CATALOGOS.dbo.tp_brkWarrantyToPay wp
-			WHERE wp.brkwp_brkUser = @empUser
-				AND wp.brkwp_paymentAppId = 0
-			ORDER BY wp.brkwp_brkDate DESC
+				@amountAcum = ISNULL(SUM(pay.brkp_amount),0)
+			FROM CATALOGOS.dbo.tp_brkPayments pay
+			WHERE pay.brkp_Eid = @empId
+				AND pay.brkp_paymentApp = 1
 
-			IF @wAmount <= @amountTotal BEGIN
+			SET @amountTotal = @amountAcum + @paymentAmount
 
-				IF @amountAcum > 0 BEGIN
-					IF @wId = -1  AND @wAmount = 0 BEGIN
-						IF @aux > 0 BEGIN
-							SET @payment = @amountTotal - @wAmount
-						END
-						ELSE BEGIN
-							SET @payment = @paymentAmount
-						END
-						SET @codeSva = '-1'
-					END
-					IF @wAmount < @amountTotal AND @wAmount > 0 BEGIN
-						SET @payment = @wAmount - @amountAcum
-						select @payment as pay12, @amountAcum , @amountTotal
-						--break
-					END
-					ELSE IF @wAmount <> 0 BEGIN
-						SET @payment = @wAmount - @amountAcum
-					END
-				END
-				ELSE BEGIN
-					IF @wId = -1 AND @wAmount = 0 BEGIN
-						SELECT @amountTotal as singar
-						SET @payment = @amountTotal
-						SET @codeSva = '-1'
-						SET @paymentAppAux = 1
-					END
-					IF @wAmount < @amountTotal AND @wAmount > 0 BEGIN
-						SET @payment = @wAmount
-						SET @paymentAppAux = 0
-					END
-					ELSE IF @wAmount <> 0 BEGIN
-						SET @payment = @amountTotal
-						SET @paymentAppAux = 0
-					END
-				END
+			WHILE @amountTotal > 0
+			BEGIN
 
-				INSERT INTO CATALOGOS.dbo.tp_brkPayments (
-					brkp_Eid
-					, brkp_nemp
-					, brkp_payUser
-					, brkp_cUser
-					, brkp_amount
-					, brkp_cDate
-					, brkp_brkDate
-					, brkp_codeSvaApp
-					, brkp_paymentApp
-				) VALUES (
-					@empId
-					, @empNumber
-					, @empUser
-					, @cUser
-					, @payment
-					, @paymentDate
-					, @paycDate
-					, @codeSva
-					, @paymentAppAux
-				)
+				SELECT
+					@wId = wp.brkwp_id
+					, @codeSva = wp.brkwp_codeSva
+					, @wAmount = wp.brkwp_amount
+					, @paycDate = wp.brkwp_brkDate
+				FROM CATALOGOS.dbo.tp_brkWarrantyToPay wp
+				WHERE wp.brkwp_brkUser = @empUser
+					AND wp.brkwp_paymentAppId = 0
+				ORDER BY wp.brkwp_brkDate DESC
 
-				SELECT @lastpay = @@IDENTITY
-				
-				IF @wId = -1 BEGIN
-					SET @amountTotal  = 0
-				END
-				ELSE BEGIN
-					UPDATE CATALOGOS.dbo.tp_brkWarrantyToPay SET
-						brkwp_paymentAppId = @lastpay
-						, brkwp_paymentAppDate = @paymentDate
-					WHERE brkwp_id = @wId
+				IF @wAmount <= @amountTotal BEGIN
 
 					IF @amountAcum > 0 BEGIN
-						UPDATE CATALOGOS.dbo.tp_brkPayments SET
-							brkp_paymentApp = 0
-						WHERE brkp_payUser = @empUser
-							AND brkp_codeSvaApp = @codeSva
-							AND brkp_brkDate = @paycDate
+						IF @wId = -1  AND @wAmount = 0 BEGIN
+							IF @aux > 0 BEGIN
+								SET @payment = @amountTotal - @wAmount
+							END
+							ELSE BEGIN
+								SET @payment = @paymentAmount
+							END
+							SET @codeSva = '-1'
+						END
+						IF @wAmount < @amountTotal AND @wAmount > 0 BEGIN
+							SET @payment = @wAmount - @amountAcum
+							select @payment as pay12, @amountAcum , @amountTotal
+							--break
+						END
+						ELSE IF @wAmount <> 0 BEGIN
+							SET @payment = @wAmount - @amountAcum
+						END
+					END
+					ELSE BEGIN
+						IF @wId = -1 AND @wAmount = 0 BEGIN
+							SELECT @amountTotal as singar
+							SET @payment = @amountTotal
+							SET @codeSva = '-1'
+							SET @paymentAppAux = 1
+						END
+						IF @wAmount < @amountTotal AND @wAmount > 0 BEGIN
+							SET @payment = @wAmount
+							SET @paymentAppAux = 0
+						END
+						ELSE IF @wAmount <> 0 BEGIN
+							SET @payment = @amountTotal
+							SET @paymentAppAux = 0
+						END
 					END
 
-					SET @amountTotal = @amountTotal - @wAmount
-					SET @aux = @aux + 1
-					SET @payment = 0
-				END
-			END
-			ELSE BEGIN
-				IF @aux > 0 BEGIN
-					SET @payment = @amountTotal
+					INSERT INTO CATALOGOS.dbo.tp_brkPayments (
+						brkp_Eid
+						, brkp_nemp
+						, brkp_payUser
+						, brkp_cUser
+						, brkp_amount
+						, brkp_cDate
+						, brkp_brkDate
+						, brkp_codeSvaApp
+						, brkp_paymentApp
+					) VALUES (
+						@empId
+						, @empNumber
+						, @empUser
+						, @cUser
+						, @payment
+						, @paymentDate
+						, @paycDate
+						, @codeSva
+						, @paymentAppAux
+					)
+
+					SELECT @lastpay = @@IDENTITY
+				
+					IF @wId = -1 BEGIN
+						SET @amountTotal  = 0
+					END
+					ELSE BEGIN
+						UPDATE CATALOGOS.dbo.tp_brkWarrantyToPay SET
+							brkwp_paymentAppId = @lastpay
+							, brkwp_paymentAppDate = @paymentDate
+						WHERE brkwp_id = @wId
+
+						IF @amountAcum > 0 BEGIN
+							UPDATE CATALOGOS.dbo.tp_brkPayments SET
+								brkp_paymentApp = 0
+							WHERE brkp_payUser = @empUser
+								AND brkp_codeSvaApp = @codeSva
+								AND brkp_brkDate = @paycDate
+						END
+
+						SET @amountTotal = @amountTotal - @wAmount
+						SET @aux = @aux + 1
+						SET @payment = 0
+					END
 				END
 				ELSE BEGIN
-					SET @payment = @paymentAmount
-				END
+					IF @aux > 0 BEGIN
+						SET @payment = @amountTotal
+					END
+					ELSE BEGIN
+						SET @payment = @paymentAmount
+					END
 				
-				INSERT INTO CATALOGOS.dbo.tp_brkPayments (
-					brkp_Eid
-					, brkp_nemp
-					, brkp_payUser
-					, brkp_cUser
-					, brkp_amount
-					, brkp_cDate
-					, brkp_brkDate
-					, brkp_codeSvaApp
-				) VALUES (
-					@empId
-					, @empNumber
-					, @empUser
-					, @cUser
-					, @payment
-					, @paymentDate
-					, @paycDate
-					, @codeSva
-				)
+					INSERT INTO CATALOGOS.dbo.tp_brkPayments (
+						brkp_Eid
+						, brkp_nemp
+						, brkp_payUser
+						, brkp_cUser
+						, brkp_amount
+						, brkp_cDate
+						, brkp_brkDate
+						, brkp_codeSvaApp
+					) VALUES (
+						@empId
+						, @empNumber
+						, @empUser
+						, @cUser
+						, @payment
+						, @paymentDate
+						, @paycDate
+						, @codeSva
+					)
 
-				SET @amountTotal = 0
+					SET @amountTotal = 0
+				END
+
+				SET @wId = -1
+				SET @codeSva = ''
+				SET @wAmount = 0
 			END
 
-			SET @wId = -1
-			SET @codeSva = ''
-			SET @wAmount = 0
-		END
+			SET @aux = 0
+			IF @@TRANCOUNT > 0 
+				COMMIT TRAN
+				SELECT 'SUCCESS' AS success
 
-		SET @aux = 0
-		IF @@TRANCOUNT > 0 
-			COMMIT TRAN
-			SELECT 'SUCCESS' AS success
-
-	END TRY
-	BEGIN CATCH
-		ROLLBACK TRAN
-		IF @msg = '' BEGIN
-			SET @msg = (SELECT SUBSTRING(ERROR_MESSAGE(), 1, 300))
-		END
-		RAISERROR(@msg, 16, 1)
-	END CATCH
+		END TRY
+		BEGIN CATCH
+			ROLLBACK TRAN
+			IF @msg = '' BEGIN
+				SET @msg = (SELECT SUBSTRING(ERROR_MESSAGE(), 1, 300))
+			END
+			RAISERROR(@msg, 16, 1)
+		END CATCH
+	END
 END
 
 -- EXEC CATALOGOS.dbo.sp_setBrkPayment 972, 65, '20170913', 'luismer'
