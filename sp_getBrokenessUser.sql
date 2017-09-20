@@ -1,7 +1,7 @@
 USE CATALOGOS
 GO
 
-ALTER PROCEDURE [dbo].[sp_getBrokenessUser](
+CREATE PROCEDURE [dbo].[sp_getBrokenessUser](
 	@user VARCHAR(20) = 'n'
 	, @startdate VARCHAR(15) = ''
 	, @enddate VARCHAR(15) = ''

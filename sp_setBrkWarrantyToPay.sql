@@ -1,7 +1,7 @@
 USE CATALOGOS
 GO
 
-ALTER PROCEDURE [dbo].[sp_setBrkWarrantyToPay]
+CREATE PROCEDURE [dbo].[sp_setBrkWarrantyToPay]
 AS
 BEGIN
 	IF OBJECT_ID('tempdb..#tmpSive') IS NOT NULL
@@ -25,8 +25,8 @@ BEGIN
 	END
 
 	DECLARE
-		--@startDate DATETIME = '2017-09-13 00:00:00.000'
-		@startDate DATETIME = GETDATE()
+		@startDate DATETIME = '2017-09-13 00:00:00.000'
+		--@startDate DATETIME = GETDATE()
 		, @msg VARCHAR(300) = ''
 
 	BEGIN TRY
