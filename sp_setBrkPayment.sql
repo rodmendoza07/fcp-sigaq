@@ -5,7 +5,7 @@ ALTER PROCEDURE [dbo].[sp_setBrkPayment](
 	@empNumber INT
 	, @paymentAmount DECIMAL(18,4)
 	, @paymentDate VARCHAR(20)
-	, @cUser VARCHAR(15)
+	, @cUser INT = 0
 	, @opt INT = 0
 )
 AS
@@ -24,22 +24,80 @@ BEGIN
 		, @aux INT = 0
 		, @payment DECIMAL(18,4)
 		, @paymentAppAux INT = 1
+		, @countUser INT = 0
+		, @createUser VARCHAR(15) = ''
 	
 	IF @opt = 0 BEGIN
-		SELECT
-			ISNULL(COUNT(*),0) AS employee
-		FROM CATALOGOS.dbo.tc_empleados
-		WHERE estatus = 1
-			AND usuario = @cUser
+		BEGIN TRY
+			SELECT
+				@countUser = ISNULL(COUNT(emp.id_empleados), 0)
+			FROM CATALOGOS.dbo.tc_empleados emp
+			WHERE emp.noemp = @empNumber
+
+			IF @countUser = 0 BEGIN
+				SET @msg = 'No existe el empleado'
+				RAISERROR(@msg, 16, 1)
+				RETURN
+			END
+		END TRY
+		BEGIN CATCH
+			IF @msg = '' BEGIN
+				SET @msg = (SELECT SUBSTRING(ERROR_MESSAGE(), 1, 300))
+			END
+			RAISERROR(@msg, 16, 1)
+		END CATCH
 	END
 
 	IF @opt = 1 BEGIN
 		BEGIN TRY
-			IF @paymentAmount = 0 BEGIN
+			SELECT
+				@createUser = usuario
+			FROM CATALOGOS.dbo.tc_empleados
+			WHERE id_empleados = @cUser
+				AND estatus = 1
+
+			IF @countUser = 0 BEGIN
+				SET @msg = 'No existe el empleado'
+				RAISERROR(@msg, 16, 1)
+				RETURN
+			END
+		END TRY
+		BEGIN CATCH
+			IF @msg = '' BEGIN
+				SET @msg = (SELECT SUBSTRING(ERROR_MESSAGE(), 1, 300))
+			END
+			RAISERROR(@msg, 16, 1)
+		END CATCH
+	END
+
+	IF @opt = 2 BEGIN
+		BEGIN TRY
+			IF @paymentAmount <= 0 BEGIN
 				SET @msg = 'No se pueden abonar cantidades en Cero'
 				RAISERROR(@msg, 16, 1)
 				RETURN
 			END
+		END TRY
+		BEGIN CATCH
+			IF @msg = '' BEGIN
+				SET @msg = (SELECT SUBSTRING(ERROR_MESSAGE(), 1, 300))
+			END
+			RAISERROR(@msg, 16, 1)
+		END CATCH
+	END
+
+	IF @opt = 3 BEGIN
+		BEGIN TRY
+			IF @paymentAmount <= 0 BEGIN
+				SET @msg = 'No se pueden abonar cantidades en Cero'
+				RAISERROR(@msg, 16, 1)
+				RETURN
+			END
+
+			SELECT
+				@createUser = usuario
+			FROM CATALOGOS.dbo.tc_empleados
+			WHERE id_empleados = @cUser
 
 			BEGIN TRAN
 			SELECT
@@ -121,7 +179,7 @@ BEGIN
 						@empId
 						, @empNumber
 						, @empUser
-						, @cUser
+						, @createUser
 						, @payment
 						, @paymentDate
 						, @paycDate
@@ -174,7 +232,7 @@ BEGIN
 						@empId
 						, @empNumber
 						, @empUser
-						, @cUser
+						, @createUser
 						, @payment
 						, @paymentDate
 						, @paycDate
