@@ -1,7 +1,7 @@
 USE CATALOGOS
 GO
 
-CREATE PROCEDURE [dbo].[sp_setBrkWarrantyToPay]
+ALTER PROCEDURE [dbo].[sp_setBrkWarrantyToPay]
 AS
 BEGIN
 	IF OBJECT_ID('tempdb..#tmpSive') IS NOT NULL
@@ -147,7 +147,14 @@ BEGIN
 		UNION
 		SELECT * FROM #tpmAudit
 		UNION
-		SELECT * FROM #brkFinance
+		SELECT 
+			fi.originSys
+			, CONVERT(varchar, fi.brkemp_id)
+			, fi.branchOffice
+			, fi.brkemp_amount
+			, fi.brkemp_userName
+			, fi.brkemp_brkDate
+		FROM #brkFinance fi
 
 		IF @@TRANCOUNT > 0 
 			COMMIT TRAN
