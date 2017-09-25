@@ -79,7 +79,7 @@ BEGIN
 					END
 					IF @wAmount < @amountTotal AND @wAmount > 0 BEGIN
 						SET @payment = @wAmount - @amountAcum
-						select @payment as pay12, @amountAcum , @amountTotal
+						--select @payment as pay12, @amountAcum , @amountTotal
 						--break
 					END
 					ELSE IF @wAmount <> 0 BEGIN
@@ -88,7 +88,7 @@ BEGIN
 				END
 				ELSE BEGIN
 					IF @wId = -1 AND @wAmount = 0 BEGIN
-						SELECT @amountTotal as singar
+						--SELECT @amountTotal as singar
 						SET @payment = @amountTotal
 						SET @codeSva = '-1'
 						SET @paymentAppAux = 1
