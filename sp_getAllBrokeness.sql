@@ -30,7 +30,7 @@ BEGIN
 			ROW_NUMBER() OVER(ORDER BY chk.wlc_createDate ASC) AS [norows]
 			, '<span class="label label-warning">SIVE</span>' AS originSys
 			, REPLICATE('0', 5 - LEN(dep.id_departamento)) + CAST(dep.id_departamento AS varchar) + ' - ' + dep.descripcion AS branchOffice
-			, tgar.sCREDITO AS credit
+			, CONVERT(varchar, tgar.sCREDITO) AS credit
 			, chk.wlc_codeSVA as codeSva
 			, '<span class="label label-danger">Quebranto</span>' AS [type]
 			, chk.wlc_createUser
@@ -81,7 +81,7 @@ BEGIN
 				WHEN tdbrk.bknd_userCharge  = 'gvargas' THEN 'GCP'
 				ELSE tdbrk.bknd_userCharge 
 			END AS responsibleUser
-			, inv.credito AS credit
+			, CONVERT(varchar, inv.credito) AS credit
 			, CASE 
 				WHEN cred.[STATUS] = 0 AND cred.SUBSISTEMA = 0 THEN '<span class="label label-primary">VIGENTE</span>'
 				WHEN cred.[STATUS] = 0 AND cred.SUBSISTEMA = 1 THEN '<span class="label label-danger">VENCIDO</span>'
@@ -116,7 +116,7 @@ BEGIN
 			, ab.baud_user_responsive
 			, ab.baud_date_create
 			, ab.baud_comment
-			, ad.daud_credit
+			, CONVERT(varchar, ad.daud_credit) AS daud_credit
 			, CASE 
 				WHEN cred.[STATUS] = 0 AND cred.SUBSISTEMA = 0 THEN '<span class="label label-primary">VIGENTE</span>'
 				WHEN cred.[STATUS] = 0 AND cred.SUBSISTEMA = 1 THEN '<span class="label label-danger">VENCIDO</span>'
