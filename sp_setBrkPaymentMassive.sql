@@ -1,7 +1,7 @@
 USE CATALOGOS
 GO
 
-ALTER PROCEDURE [dbo].[sp_setBrkPaymentMassive](
+CREATE PROCEDURE [dbo].[sp_setBrkPaymentMassive](
 	 @cUser INT = 0
 	, @opt INT = 0
 	, @fileRoute VARCHAR(450)
@@ -31,6 +31,13 @@ BEGIN
 		, @paymentAmount DECIMAL(18,4)
 		, @empNumber INT
 		, @paymentDate DATETIME
+
+	IF @opt = 0 BEGIN
+		SELECT
+			usuario as success
+		FROM CATALOGOS.dbo.tc_empleados
+		WHERE id_empleados = @cUser
+	END
 
 	IF @opt = 2 BEGIN
 
